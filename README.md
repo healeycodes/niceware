@@ -25,10 +25,10 @@ cargo test
 
 ## Credits
 
-Rust port credits:
+Rust port:
 
 Code, tests, and docs are either straight-up copied or inspired from [niceware](https://github.com/diracdeltas/niceware).
 
-Original credits:
+Original:
 
 Niceware was inspired by [Diceware](http://world.std.com/~reinhold/diceware.html). Its wordlist is derived from [the SIL English word list](https://web.archive.org/web/20180803153208/http://www-01.sil.org/linguistics/wordlists/english/). This project is based on [diracdeltas] work on OpenPGP key backup for the Yahoo [End-to-End](https://github.com/yahoo/end-to-end) project.
