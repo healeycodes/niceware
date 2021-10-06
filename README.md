@@ -27,7 +27,7 @@ cargo test
 
 Rust port:
 
-Code, tests, and docs are either straight-up copied or inspired from [niceware](https://github.com/diracdeltas/niceware).
+Code, tests, and docs are either straight-up ported/copied or inspired from [niceware](https://github.com/diracdeltas/niceware).
 
 Original:
 
