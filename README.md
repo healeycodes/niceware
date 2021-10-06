@@ -1,6 +1,6 @@
 # rust-niceware
 
-[![Rust](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml) [![crates.io 0.1.0](https://img.shields.io/badge/crates.io-0.1.0-brightgreen)](https://crates.io/crates/rust-niceware)
+[![Rust](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml) [![crates.io v0.1.0](https://img.shields.io/badge/crates.io-v0.1.0-brightgreen)](https://crates.io/crates/rust-niceware)
 
 _A Rust port of [niceware](https://github.com/diracdeltas/niceware). Sections of this README have been copied from the original project._
 
