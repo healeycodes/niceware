@@ -1,7 +1,11 @@
 [package]
 name = "rust-niceware"
+description = "Generate or convert random bytes into passphrases. A Rust port of niceware."
+homepage = "https://github.com/healeycodes/rust-niceware"
+repository = "https://github.com/healeycodes/rust-niceware"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
