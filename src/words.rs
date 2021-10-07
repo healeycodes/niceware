@@ -6,7 +6,7 @@
  * https://github.com/yahoo/end-to-end
  */
 
-pub const ALL_WORDS: &'static [&str] = &[
+pub const ALL_WORDS: &[&str] = &[
     "a",
     "aah",
     "aardvark",

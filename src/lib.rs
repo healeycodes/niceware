@@ -21,7 +21,7 @@ pub fn bytes_to_pass_phrase(bytes: Vec<u8>) -> Vec<&'static str> {
             words.push(word);
         }
     }
-    return words;
+    words
 }
 
 pub fn passphrase_to_bytes(words: Vec<&str>) -> Result<Vec<u8>, error::UnknownWordError> {
