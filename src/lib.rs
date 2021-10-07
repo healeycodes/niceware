@@ -4,7 +4,7 @@ use std::convert::TryInto;
 mod error;
 mod words;
 
-const MAX_PASSPHRASE_SIZE: u32 = 1024;
+const MAX_PASSPHRASE_SIZE: u16 = 1024;
 
 pub fn bytes_to_pass_phrase(bytes: Vec<u8>) -> Vec<&'static str> {
     if bytes.len() % 2 != 0 {
@@ -44,7 +44,7 @@ pub fn passphrase_to_bytes(words: Vec<&str>) -> Result<Vec<u8>, error::UnknownWo
     Ok(bytes)
 }
 
-pub fn generate_passphrase(size: u32) -> Result<Vec<&'static str>, ring::error::Unspecified> {
+pub fn generate_passphrase(size: u16) -> Result<Vec<&'static str>, ring::error::Unspecified> {
     if size > MAX_PASSPHRASE_SIZE {
         panic!("size must be between 0 and {}", MAX_PASSPHRASE_SIZE);
     }
