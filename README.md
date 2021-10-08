@@ -2,6 +2,10 @@
 
 [![Rust](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml) [![crates.io v0.1.0](https://img.shields.io/badge/crates.io-v0.1.0-brightgreen)](https://crates.io/crates/rust-niceware)
 
+> My blog post: [Porting Niceware to Rust](https://healeycodes.com/porting-niceware-to-rust)
+
+<br>
+
 _A Rust port of [niceware](https://github.com/diracdeltas/niceware). Sections of this README have been copied from the original project._
 
 This library generates random-yet-memorable passwords. Each word provides 16 bits of entropy, so a useful password requires at least 3 words.
