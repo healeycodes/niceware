@@ -1,6 +1,7 @@
 //! A Rust port of [niceware](https://github.com/diracdeltas/niceware)
 //!
 //! Sections of documentation have been copied from the original project.
+//! **Important**: `generate_passphrase` is slightly different than original!
 //!
 //! This library generates random-yet-memorable passwords. Each word provides 16 bits of entropy, so a useful password requires at least 3 words.
 //!
@@ -19,13 +20,12 @@
 //! println!("Passphrase: {}", rust_niceware::generate_passphrase(8).unwrap().join(" "));
 //! ```
 
-use std::convert::TryInto;
 pub use error::{UnknownWordError, RNGError};
 
 mod error;
 mod words;
 
-const MAX_PASSPHRASE_SIZE: u16 = 1024;
+const MAX_PASSPHRASE_WORDS: u16 = 512;
 const MAX_WORD_LEN: usize = 28;
 
 /// Create word-based passphrase from given bytes.
@@ -87,20 +87,23 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, UnknownWordError> 
 ///
 /// This is a shorthand for generating random bytes, and feeding them to `bytes_to_passphrase`.
 ///
+/// **Important**: As opposed to the original implementation this takes number of words instead of
+/// number of bytes. This should be more natural and avoids panics.
+///
 /// ## Errors
 ///
 /// Returns error if the underlying RNG failed to generate bytes.
-pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, RNGError> {
+pub fn generate_passphrase(num_words: u16) -> Result<Vec<&'static str>, RNGError> {
     use rand::Rng;
 
-    if num_random_bytes > MAX_PASSPHRASE_SIZE {
+    if num_words > MAX_PASSPHRASE_WORDS {
         panic!(
-            "num_random_bytes must be between 0 and {}",
-            MAX_PASSPHRASE_SIZE
+            "num_words must be between 0 and {}",
+            MAX_PASSPHRASE_WORDS
         );
     }
 
-    let mut bytes: Vec<u8> = vec![0; num_random_bytes.try_into().unwrap()];
+    let mut bytes: Vec<u8> = vec![0; usize::from(num_words) * 2];
     let mut s_rng = rand::thread_rng();
     s_rng.try_fill(&mut *bytes).map_err(RNGError::new)?;
 
@@ -115,28 +118,16 @@ mod tests {
 
     #[test]
     fn correct_passphrase_length() {
-        assert_eq!(generate_passphrase(2).unwrap().len(), 1);
+        assert_eq!(generate_passphrase(1).unwrap().len(), 1);
         assert_eq!(generate_passphrase(0).unwrap().len(), 0);
-        assert_eq!(generate_passphrase(20).unwrap().len(), 10);
-        assert_eq!(generate_passphrase(512).unwrap().len(), 256);
+        assert_eq!(generate_passphrase(10).unwrap().len(), 10);
+        assert_eq!(generate_passphrase(256).unwrap().len(), 256);
     }
 
     #[test]
-    #[should_panic(expected = "only even-sized byte arrays are supported")]
-    fn panic_odd_passphrase_length_1() {
-        let _ = generate_passphrase(1);
-    }
-
-    #[test]
-    #[should_panic(expected = "only even-sized byte arrays are supported")]
-    fn panic_odd_passphrase_length_23() {
-        let _ = generate_passphrase(23);
-    }
-
-    #[test]
-    #[should_panic(expected = "num_random_bytes must be between 0 and 1024")]
-    fn panic_passphrase_oob_num_random_bytes_1025() {
-        let _ = generate_passphrase(1025);
+    #[should_panic(expected = "num_words must be between 0 and 512")]
+    fn panic_passphrase_oob_num_words_513() {
+        let _ = generate_passphrase(513);
     }
 
     // bytes_to_passphrase
