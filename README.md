@@ -33,6 +33,8 @@ cargo test
 
 Rust port:
 
+[@Kixunil](https://github.com/Kixunil) made some fantastic changes w/r/t idiomatic and performant Rust in [#2](https://github.com/healeycodes/rust-niceware/pull/2).
+
 Code, tests, and docs are either straight-up ported/copied from, or inspired by [niceware](https://github.com/diracdeltas/niceware).
 
 Original:
