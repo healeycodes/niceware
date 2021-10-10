@@ -1,6 +1,6 @@
-# rust-niceware
+# niceware
 
-[![Rust](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml) [![crates.io v0.3.0](https://img.shields.io/badge/crates.io-v0.3.0-brightgreen)](https://crates.io/crates/rust-niceware)
+[![Rust](https://github.com/healeycodes/niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/niceware/actions/workflows/rust.yml) [![crates.io v0.3.0](https://img.shields.io/badge/crates.io-v0.3.0-brightgreen)](https://crates.io/crates/niceware)
 
 > My blog post: [Porting Niceware to Rust](https://healeycodes.com/porting-niceware-to-rust)
 
@@ -12,16 +12,16 @@ This library generates random-yet-memorable passwords. Each word provides 16 bit
 
 The transformation from bytes to passphrase is reversible.
 
-Because the wordlist is of exactly size 2^16, rust-niceware is also useful for convert cryptographic keys and other sequences of random bytes into human-readable phrases. With rust-niceware, a 128-bit key is equivalent to an 8-word phrase.
+Because the wordlist is of exactly size 2^16, niceware is also useful for convert cryptographic keys and other sequences of random bytes into human-readable phrases. With niceware, a 128-bit key is equivalent to an 8-word phrase.
 
 Similar to the source, heed this warning:
 
 > WARNING: The wordlist has not been rigorously checked for offensive words. Use at your own risk.
 
 ## Sample use cases
-- rust-niceware can be used to generate secure, semi-memorable, easy-to-type passphrases. A random 3-5 word phrase in rust-niceware is equivalent to a strong password for authentication to most online services. For instance, `+8svofk0Y1o=` and `bacca cavort west volley` are equally strong (64 bits of randomness).
+- niceware can be used to generate secure, semi-memorable, easy-to-type passphrases. A random 3-5 word phrase in niceware is equivalent to a strong password for authentication to most online services. For instance, `+8svofk0Y1o=` and `bacca cavort west volley` are equally strong (64 bits of randomness).
 
-- rust-niceware can be used to display cryptographic key material in a way that users can easily backup or copy between devices. For instance, the 128-bit random seed used to generate a 256-bit ECC key (~equivalent to a 3072-bit RSA key) is only 8 rust-niceware words. With this 8-word phrase, you can reconstruct the entire public/private key pair.
+- niceware can be used to display cryptographic key material in a way that users can easily backup or copy between devices. For instance, the 128-bit random seed used to generate a 256-bit ECC key (~equivalent to a 3072-bit RSA key) is only 8 niceware words. With this 8-word phrase, you can reconstruct the entire public/private key pair.
 
 ## Tests
 
@@ -33,7 +33,7 @@ cargo test
 
 Rust port:
 
-[@Kixunil](https://github.com/Kixunil) made some fantastic changes w/r/t idiomatic and performant Rust in [#2](https://github.com/healeycodes/rust-niceware/pull/2).
+[@Kixunil](https://github.com/Kixunil) made some fantastic changes w/r/t idiomatic and performant Rust in [#2](https://github.com/healeycodes/niceware/pull/2).
 
 Code, tests, and docs are either straight-up ported/copied from, or inspired by [niceware](https://github.com/diracdeltas/niceware).
 
