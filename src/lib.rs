@@ -1,3 +1,24 @@
+//! A Rust port of [niceware](https://github.com/diracdeltas/niceware)
+//!
+//! Sections of documentation have been copied from the original project.
+//!
+//! This library generates random-yet-memorable passwords. Each word provides 16 bits of entropy, so a useful password requires at least 3 words.
+//!
+//! The transformation from bytes to passphrase is reversible.
+//!
+//! Because the wordlist is of exactly size 2^16, rust-niceware is also useful for convert cryptographic keys and other sequences of random bytes into human-readable phrases. With rust-niceware, a 128-bit key is equivalent to an 8-word phrase.
+//!
+//! Similar to the source, heed this warning:
+//!
+//! > WARNING: The wordlist has not been rigorously checked for offensive words. Use at your own risk.
+//!
+//! ## Examples
+//!
+//! ```
+//! // Creates 128-bit passphrase which is considered cryptographically secure.
+//! println!("Passphrase: {}", rust_niceware::generate_passphrase(8).unwrap().join(" "));
+//! ```
+
 use std::convert::TryInto;
 pub use error::{UnknownWordError, RNGError};
 
@@ -7,6 +28,13 @@ mod words;
 const MAX_PASSPHRASE_SIZE: u16 = 1024;
 const MAX_WORD_LEN: usize = 28;
 
+/// Create word-based passphrase from given bytes.
+///
+/// Only even-sized slices are supported.
+///
+/// ## Panics
+///
+/// This function panics if the length of slice is odd.
 pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Vec<&'static str> {
     if bytes.len() % 2 != 0 {
         panic!("only even-sized byte arrays are supported")
@@ -18,6 +46,14 @@ pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Vec<&'static str> {
     .collect()
 }
 
+/// Decode words into bytes
+///
+/// This tries to find words in the dictionary and produce the bytes that would have generated
+/// them.
+///
+/// ## Errors
+///
+/// This currently returns an error if a word is not found and returns no other errors.
 pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, UnknownWordError> {
     let mut bytes: Vec<u8> = Vec::with_capacity(words.len() * 2);
     let mut word_buffer = [0; MAX_WORD_LEN];
@@ -47,6 +83,13 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, UnknownWordError> 
     Ok(bytes)
 }
 
+/// Convenience funtion to generate a passphrase using OS RNG
+///
+/// This is a shorthand for generating random bytes, and feeding them to `bytes_to_passphrase`.
+///
+/// ## Errors
+///
+/// Returns error if the underlying RNG failed to generate bytes.
 pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, RNGError> {
     use rand::Rng;
 

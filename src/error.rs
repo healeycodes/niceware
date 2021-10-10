@@ -1,5 +1,6 @@
 use std::{error::Error, fmt};
 
+/// Error returned when a word is not found in dictionary.
 #[derive(Debug)]
 pub struct UnknownWordError {
     word: Box<str>,
@@ -21,6 +22,7 @@ impl fmt::Display for UnknownWordError {
 
 impl Error for UnknownWordError {}
 
+/// Error returned when an RNG fails to generate entropy.
 #[derive(Debug)]
 pub struct RNGError {
     error: rand::Error,
