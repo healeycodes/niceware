@@ -1,50 +1,98 @@
-use ring::{self, rand::SecureRandom};
+//! A Rust port of [niceware](https://github.com/diracdeltas/niceware)
+//!
+//! Sections of documentation have been copied from the original project.
+//!
+//! This library generates random-yet-memorable passwords. Each word provides 16 bits of entropy, so a useful password requires at least 3 words.
+//!
+//! The transformation from bytes to passphrase is reversible.
+//!
+//! Because the wordlist is of exactly size 2^16, rust-niceware is also useful for convert cryptographic keys and other sequences of random bytes into human-readable phrases. With rust-niceware, a 128-bit key is equivalent to an 8-word phrase.
+//!
+//! Similar to the source, heed this warning:
+//!
+//! > WARNING: The wordlist has not been rigorously checked for offensive words. Use at your own risk.
+//!
+//! ## Examples
+//!
+//! ```
+//! // Creates 128-bit passphrase which is considered cryptographically secure.
+//! println!("Passphrase: {}", rust_niceware::generate_passphrase(8).unwrap().join(" "));
+//! ```
+
 use std::convert::TryInto;
+pub use error::{UnknownWordError, RNGError};
 
 mod error;
 mod words;
 
 const MAX_PASSPHRASE_SIZE: u16 = 1024;
+const MAX_WORD_LEN: usize = 28;
 
+/// Create word-based passphrase from given bytes.
+///
+/// Only even-sized slices are supported.
+///
+/// ## Panics
+///
+/// This function panics if the length of slice is odd.
 pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Vec<&'static str> {
     if bytes.len() % 2 != 0 {
         panic!("only even-sized byte arrays are supported")
     }
-    let _bytes: Vec<u16> = bytes.iter().map(|n| u16::from(*n)).collect();
-    let mut words: Vec<&str> = Vec::new();
-
-    for (index, byte) in _bytes.iter().enumerate() {
-        if index % 2 == 0 {
-            let next = _bytes[index + 1];
-            let word_index = byte * 256 + next;
-            let word = words::ALL_WORDS[usize::from(word_index)];
-            words.push(word);
-        }
-    }
-    words
+    bytes.chunks_exact(2).map(|pair| {
+        let word_index = usize::from(pair[0]) * 256 + usize::from(pair[1]);
+        words::ALL_WORDS[word_index]
+    })
+    .collect()
 }
 
-pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWordError> {
-    let mut bytes: Vec<u8> = vec![0; words.len() * 2];
+/// Decode words into bytes
+///
+/// This tries to find words in the dictionary and produce the bytes that would have generated
+/// them.
+///
+/// ## Errors
+///
+/// This currently returns an error if a word is not found and returns no other errors.
+pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, UnknownWordError> {
+    let mut bytes: Vec<u8> = Vec::with_capacity(words.len() * 2);
+    let mut word_buffer = [0; MAX_WORD_LEN];
 
-    for (index, word) in words.iter().enumerate() {
-        match words::ALL_WORDS.binary_search(&&*word.to_lowercase()) {
-            Ok(word_index) => {
-                bytes[2 * index] = (word_index / 256) as u8;
-                bytes[2 * index + 1] = (word_index % 256) as u8;
-            }
-            Err(_) => {
-                return Err(error::UnknownWordError::new(&format!(
-                    "unknown word: {}",
-                    word
-                )))
-            }
+    for word in words {
+        // If a word is longer than maximum then we will definitely not find it.
+        // MAX_WORD_LEN is tested below.
+        if word.len() > MAX_WORD_LEN {
+            return Err(UnknownWordError::new(word));
         }
+        // All words are ascii (test below) so we can just do ascii lowercase.
+        for (src, dst) in word.bytes().zip(&mut word_buffer) {
+            *dst = src.to_ascii_lowercase();
+        }
+        let word_lowercase = &word_buffer[..word.len()];
+
+        let word_index = words::ALL_WORDS
+            .binary_search_by_key(&word_lowercase, |word| word.as_bytes())
+            .map_err(|_| UnknownWordError::new(word))?;
+
+        // Casting is safe because we have 2^16 words so the index can not possibly be greater than
+        // 2^16 - 1. 2^16 - 1 / 256 == 255
+        bytes.push((word_index / 256) as u8);
+        // Casting is safe because x % 256 is always at most 255
+        bytes.push((word_index % 256) as u8);
     }
     Ok(bytes)
 }
 
-pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, error::RNGError> {
+/// Convenience funtion to generate a passphrase using OS RNG
+///
+/// This is a shorthand for generating random bytes, and feeding them to `bytes_to_passphrase`.
+///
+/// ## Errors
+///
+/// Returns error if the underlying RNG failed to generate bytes.
+pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, RNGError> {
+    use rand::Rng;
+
     if num_random_bytes > MAX_PASSPHRASE_SIZE {
         panic!(
             "num_random_bytes must be between 0 and {}",
@@ -53,11 +101,10 @@ pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, e
     }
 
     let mut bytes: Vec<u8> = vec![0; num_random_bytes.try_into().unwrap()];
-    let s_rng = ring::rand::SystemRandom::new();
-    match s_rng.fill(&mut bytes) {
-        Ok(_) => Ok(bytes_to_pass_phrase(&bytes)),
-        Err(error) => Err(error::RNGError::new(&format!("{}", error))),
-    }
+    let mut s_rng = rand::thread_rng();
+    s_rng.try_fill(&mut *bytes).map_err(RNGError::new)?;
+
+    Ok(bytes_to_pass_phrase(&bytes))
 }
 
 #[cfg(test)]
@@ -97,16 +144,16 @@ mod tests {
     #[test]
     #[should_panic(expected = "only even-sized byte arrays are supported")]
     fn odd_bytes_length() {
-        let _ = bytes_to_pass_phrase(&vec![0]);
+        let _ = bytes_to_pass_phrase(&[0]);
     }
 
     #[test]
     fn expected_passphrases() {
-        assert_eq!(bytes_to_pass_phrase(&vec![]).len(), 0);
-        assert_eq!(bytes_to_pass_phrase(&vec![0, 0]), vec!["a"]);
-        assert_eq!(bytes_to_pass_phrase(&vec![255, 255]), vec!["zyzzyva"]);
+        assert_eq!(bytes_to_pass_phrase(&[]).len(), 0);
+        assert_eq!(bytes_to_pass_phrase(&[0, 0]), &["a"]);
+        assert_eq!(bytes_to_pass_phrase(&[255, 255]), &["zyzzyva"]);
         assert_eq!(
-            bytes_to_pass_phrase(&vec![
+            bytes_to_pass_phrase(&[
                 0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255
             ]),
             "a bioengineering balloted gobbled creneled written depriving zyzzyva"
@@ -120,28 +167,44 @@ mod tests {
     #[test]
     fn invalid_word() {
         assert_eq!(
-            passphrase_to_bytes(&vec!["You", "love", "ninetales"])
+            passphrase_to_bytes(&["You", "love", "ninetales"])
                 .unwrap_err()
-                .details,
+                .to_string(),
             "unknown word: ninetales"
         );
     }
 
     #[test]
     fn expected_bytes() {
-        assert_eq!(passphrase_to_bytes(&vec!["A"]).unwrap(), vec![0, 0]);
+        assert_eq!(passphrase_to_bytes(&["A"]).unwrap(), &[0, 0]);
         assert_eq!(
-            passphrase_to_bytes(&vec!["zyzzyva"]).unwrap(),
-            vec![255, 255]
+            passphrase_to_bytes(&["zyzzyva"]).unwrap(),
+            &[255, 255]
         );
         assert_eq!(
             passphrase_to_bytes(
-                &"a bioengineering balloted gobbled creneled written depriving zyzzyva"
-                    .split(" ")
-                    .collect::<Vec<&str>>()
+                &["a", "bioengineering", "balloted", "gobbled", "creneled", "written", "depriving", "zyzzyva"]
             )
             .unwrap(),
-            vec![0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255]
+            &[0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255]
         );
+    }
+
+    #[test]
+    fn max_word_len() {
+        let max_word_len = crate::words::ALL_WORDS
+            .iter()
+            .copied()
+            .map(str::len)
+            .max()
+            .unwrap();
+
+        assert_eq!(crate::MAX_WORD_LEN, max_word_len);
+    }
+
+    #[test]
+    fn all_words_are_ascii() {
+        // makes sure assumption holds
+        assert!(crate::words::ALL_WORDS.iter().copied().all(str::is_ascii));
     }
 }
