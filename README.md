@@ -1,6 +1,6 @@
 # rust-niceware
 
-[![Rust](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml) [![crates.io v0.2.0](https://img.shields.io/badge/crates.io-v0.2.0-brightgreen)](https://crates.io/crates/rust-niceware)
+[![Rust](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml/badge.svg)](https://github.com/healeycodes/rust-niceware/actions/workflows/rust.yml) [![crates.io v0.3.0](https://img.shields.io/badge/crates.io-v0.3.0-brightgreen)](https://crates.io/crates/rust-niceware)
 
 > My blog post: [Porting Niceware to Rust](https://healeycodes.com/porting-niceware-to-rust)
 
