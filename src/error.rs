@@ -23,10 +23,10 @@ impl Error for UnknownWordError {}
 
 #[derive(Debug)]
 pub struct RNGError {
-    error: ring::error::Unspecified,
+    error: rand::Error,
 }
 impl RNGError {
-    pub(crate) fn new(error: ring::error::Unspecified) -> RNGError {
+    pub(crate) fn new(error: rand::Error) -> RNGError {
         RNGError {
             error,
         }
@@ -34,8 +34,12 @@ impl RNGError {
 }
 impl fmt::Display for RNGError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to generate entropy for passphrase: {}", self.error)
+        f.write_str("failed to generate entropy for passphrase")
     }
 }
 
-impl Error for RNGError {}
+impl Error for RNGError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.error)
+    }
+}

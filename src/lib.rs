@@ -1,4 +1,3 @@
-use ring::{self, rand::SecureRandom};
 use std::convert::TryInto;
 
 mod error;
@@ -48,6 +47,8 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWord
 }
 
 pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, error::RNGError> {
+    use rand::Rng;
+
     if num_random_bytes > MAX_PASSPHRASE_SIZE {
         panic!(
             "num_random_bytes must be between 0 and {}",
@@ -56,8 +57,9 @@ pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, e
     }
 
     let mut bytes: Vec<u8> = vec![0; num_random_bytes.try_into().unwrap()];
-    let s_rng = ring::rand::SystemRandom::new();
-    s_rng.fill(&mut bytes).map_err(error::RNGError::new)?;
+    let mut s_rng = rand::thread_rng();
+    s_rng.try_fill(&mut *bytes).map_err(error::RNGError::new)?;
+
     Ok(bytes_to_pass_phrase(&bytes))
 }
 
