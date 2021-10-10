@@ -5,41 +5,44 @@ mod error;
 mod words;
 
 const MAX_PASSPHRASE_SIZE: u16 = 1024;
+const MAX_WORD_LEN: usize = 28;
 
 pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Vec<&'static str> {
     if bytes.len() % 2 != 0 {
         panic!("only even-sized byte arrays are supported")
     }
-    let _bytes: Vec<u16> = bytes.iter().map(|n| u16::from(*n)).collect();
-    let mut words: Vec<&str> = Vec::new();
-
-    for (index, byte) in _bytes.iter().enumerate() {
-        if index % 2 == 0 {
-            let next = _bytes[index + 1];
-            let word_index = byte * 256 + next;
-            let word = words::ALL_WORDS[usize::from(word_index)];
-            words.push(word);
-        }
-    }
-    words
+    bytes.chunks_exact(2).map(|pair| {
+        let word_index = usize::from(pair[0]) * 256 + usize::from(pair[1]);
+        words::ALL_WORDS[word_index]
+    })
+    .collect()
 }
 
 pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWordError> {
-    let mut bytes: Vec<u8> = vec![0; words.len() * 2];
+    let mut bytes: Vec<u8> = Vec::with_capacity(words.len() * 2);
+    let mut word_buffer = [0; MAX_WORD_LEN];
 
-    for (index, word) in words.iter().enumerate() {
-        match words::ALL_WORDS.binary_search(&&*word.to_lowercase()) {
-            Ok(word_index) => {
-                bytes[2 * index] = (word_index / 256) as u8;
-                bytes[2 * index + 1] = (word_index % 256) as u8;
-            }
-            Err(_) => {
-                return Err(error::UnknownWordError::new(&format!(
-                    "unknown word: {}",
-                    word
-                )))
-            }
+    for word in words {
+        // If a word is longer than maximum then we will definitely not find it.
+        // MAX_WORD_LEN is tested below.
+        if word.len() > MAX_WORD_LEN {
+            return Err(error::UnknownWordError::new(word));
         }
+        // All words are ascii (test below) so we can just do ascii lowercase.
+        for (src, dst) in word.bytes().zip(&mut word_buffer) {
+            *dst = src.to_ascii_lowercase();
+        }
+        let word_lowercase = &word_buffer[..word.len()];
+
+        let word_index = words::ALL_WORDS
+            .binary_search_by_key(&word_lowercase, |word| word.as_bytes())
+            .map_err(|_| error::UnknownWordError::new(word))?;
+
+        // Casting is safe because we have 2^16 words so the index can not possibly be greater than
+        // 2^16 - 1. 2^16 - 1 / 256 == 255
+        bytes.push((word_index / 256) as u8);
+        // Casting is safe because x % 256 is always at most 255
+        bytes.push((word_index % 256) as u8);
     }
     Ok(bytes)
 }
@@ -54,10 +57,8 @@ pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, e
 
     let mut bytes: Vec<u8> = vec![0; num_random_bytes.try_into().unwrap()];
     let s_rng = ring::rand::SystemRandom::new();
-    match s_rng.fill(&mut bytes) {
-        Ok(_) => Ok(bytes_to_pass_phrase(&bytes)),
-        Err(error) => Err(error::RNGError::new(&format!("{}", error))),
-    }
+    s_rng.fill(&mut bytes).map_err(error::RNGError::new)?;
+    Ok(bytes_to_pass_phrase(&bytes))
 }
 
 #[cfg(test)]
@@ -122,7 +123,7 @@ mod tests {
         assert_eq!(
             passphrase_to_bytes(&["You", "love", "ninetales"])
                 .unwrap_err()
-                .details,
+                .to_string(),
             "unknown word: ninetales"
         );
     }
@@ -141,5 +142,23 @@ mod tests {
             .unwrap(),
             &[0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255]
         );
+    }
+
+    #[test]
+    fn max_word_len() {
+        let max_word_len = crate::words::ALL_WORDS
+            .iter()
+            .copied()
+            .map(str::len)
+            .max()
+            .unwrap();
+
+        assert_eq!(crate::MAX_WORD_LEN, max_word_len);
+    }
+
+    #[test]
+    fn all_words_are_ascii() {
+        // makes sure assumption holds
+        assert!(crate::words::ALL_WORDS.iter().copied().all(str::is_ascii));
     }
 }
