@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+pub use error::{UnknownWordError, RNGError};
 
 mod error;
 mod words;
@@ -17,7 +18,7 @@ pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Vec<&'static str> {
     .collect()
 }
 
-pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWordError> {
+pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, UnknownWordError> {
     let mut bytes: Vec<u8> = Vec::with_capacity(words.len() * 2);
     let mut word_buffer = [0; MAX_WORD_LEN];
 
@@ -25,7 +26,7 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWord
         // If a word is longer than maximum then we will definitely not find it.
         // MAX_WORD_LEN is tested below.
         if word.len() > MAX_WORD_LEN {
-            return Err(error::UnknownWordError::new(word));
+            return Err(UnknownWordError::new(word));
         }
         // All words are ascii (test below) so we can just do ascii lowercase.
         for (src, dst) in word.bytes().zip(&mut word_buffer) {
@@ -35,7 +36,7 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWord
 
         let word_index = words::ALL_WORDS
             .binary_search_by_key(&word_lowercase, |word| word.as_bytes())
-            .map_err(|_| error::UnknownWordError::new(word))?;
+            .map_err(|_| UnknownWordError::new(word))?;
 
         // Casting is safe because we have 2^16 words so the index can not possibly be greater than
         // 2^16 - 1. 2^16 - 1 / 256 == 255
@@ -46,7 +47,7 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWord
     Ok(bytes)
 }
 
-pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, error::RNGError> {
+pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, RNGError> {
     use rand::Rng;
 
     if num_random_bytes > MAX_PASSPHRASE_SIZE {
@@ -58,7 +59,7 @@ pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, e
 
     let mut bytes: Vec<u8> = vec![0; num_random_bytes.try_into().unwrap()];
     let mut s_rng = rand::thread_rng();
-    s_rng.try_fill(&mut *bytes).map_err(error::RNGError::new)?;
+    s_rng.try_fill(&mut *bytes).map_err(RNGError::new)?;
 
     Ok(bytes_to_pass_phrase(&bytes))
 }
