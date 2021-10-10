@@ -6,7 +6,7 @@ mod words;
 
 const MAX_PASSPHRASE_SIZE: u16 = 1024;
 
-pub fn bytes_to_pass_phrase(bytes: Vec<u8>) -> Vec<&'static str> {
+pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Vec<&'static str> {
     if bytes.len() % 2 != 0 {
         panic!("only even-sized byte arrays are supported")
     }
@@ -24,7 +24,7 @@ pub fn bytes_to_pass_phrase(bytes: Vec<u8>) -> Vec<&'static str> {
     words
 }
 
-pub fn passphrase_to_bytes(words: Vec<&str>) -> Result<Vec<u8>, error::UnknownWordError> {
+pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, error::UnknownWordError> {
     let mut bytes: Vec<u8> = vec![0; words.len() * 2];
 
     for (index, word) in words.iter().enumerate() {
@@ -44,16 +44,20 @@ pub fn passphrase_to_bytes(words: Vec<&str>) -> Result<Vec<u8>, error::UnknownWo
     Ok(bytes)
 }
 
-pub fn generate_passphrase(size: u16) -> Result<Vec<&'static str>, ring::error::Unspecified> {
-    if size > MAX_PASSPHRASE_SIZE {
-        panic!("size must be between 0 and {}", MAX_PASSPHRASE_SIZE);
+pub fn generate_passphrase(num_random_bytes: u16) -> Result<Vec<&'static str>, error::RNGError> {
+    if num_random_bytes > MAX_PASSPHRASE_SIZE {
+        panic!(
+            "num_random_bytes must be between 0 and {}",
+            MAX_PASSPHRASE_SIZE
+        );
     }
 
-    let mut bytes: Vec<u8> = vec![0; size.try_into().unwrap()];
+    let mut bytes: Vec<u8> = vec![0; num_random_bytes.try_into().unwrap()];
     let s_rng = ring::rand::SystemRandom::new();
-    s_rng.fill(&mut bytes)?;
-
-    Ok(bytes_to_pass_phrase(bytes))
+    match s_rng.fill(&mut bytes) {
+        Ok(_) => Ok(bytes_to_pass_phrase(&bytes)),
+        Err(error) => Err(error::RNGError::new(&format!("{}", error))),
+    }
 }
 
 #[cfg(test)]
@@ -83,8 +87,8 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "size must be between 0 and 1024")]
-    fn panic_passphrase_oob_size_1025() {
+    #[should_panic(expected = "num_random_bytes must be between 0 and 1024")]
+    fn panic_passphrase_oob_num_random_bytes_1025() {
         let _ = generate_passphrase(1025);
     }
 
@@ -93,16 +97,16 @@ mod tests {
     #[test]
     #[should_panic(expected = "only even-sized byte arrays are supported")]
     fn odd_bytes_length() {
-        let _ = bytes_to_pass_phrase(vec![0]);
+        let _ = bytes_to_pass_phrase(&vec![0]);
     }
 
     #[test]
     fn expected_passphrases() {
-        assert_eq!(bytes_to_pass_phrase(vec![]).len(), 0);
-        assert_eq!(bytes_to_pass_phrase(vec![0, 0]), vec!["a"]);
-        assert_eq!(bytes_to_pass_phrase(vec![255, 255]), vec!["zyzzyva"]);
+        assert_eq!(bytes_to_pass_phrase(&vec![]).len(), 0);
+        assert_eq!(bytes_to_pass_phrase(&vec![0, 0]), vec!["a"]);
+        assert_eq!(bytes_to_pass_phrase(&vec![255, 255]), vec!["zyzzyva"]);
         assert_eq!(
-            bytes_to_pass_phrase(vec![
+            bytes_to_pass_phrase(&vec![
                 0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255
             ]),
             "a bioengineering balloted gobbled creneled written depriving zyzzyva"
@@ -116,7 +120,7 @@ mod tests {
     #[test]
     fn invalid_word() {
         assert_eq!(
-            passphrase_to_bytes(vec!["You", "love", "ninetales"])
+            passphrase_to_bytes(&vec!["You", "love", "ninetales"])
                 .unwrap_err()
                 .details,
             "unknown word: ninetales"
@@ -125,14 +129,14 @@ mod tests {
 
     #[test]
     fn expected_bytes() {
-        assert_eq!(passphrase_to_bytes(vec!["A"]).unwrap(), vec![0, 0]);
+        assert_eq!(passphrase_to_bytes(&vec!["A"]).unwrap(), vec![0, 0]);
         assert_eq!(
-            passphrase_to_bytes(vec!["zyzzyva"]).unwrap(),
+            passphrase_to_bytes(&vec!["zyzzyva"]).unwrap(),
             vec![255, 255]
         );
         assert_eq!(
             passphrase_to_bytes(
-                "a bioengineering balloted gobbled creneled written depriving zyzzyva"
+                &"a bioengineering balloted gobbled creneled written depriving zyzzyva"
                     .split(" ")
                     .collect::<Vec<&str>>()
             )
