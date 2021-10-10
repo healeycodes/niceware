@@ -36,7 +36,7 @@ const MAX_WORD_LEN: usize = 28;
 /// ## Errors
 ///
 /// This function returns an InvalidSize error if the given slice has an odd number of bytes. It returns an InvalidByte error if the bytes reference invalid words.
-pub fn bytes_to_pass_phrase(bytes: &[u8]) -> Result<Vec<&'static str>, Error> {
+pub fn bytes_to_passphrase(bytes: &[u8]) -> Result<Vec<&'static str>, Error> {
     if bytes.len() % 2 != 0 {
         return Err(Error::InvalidSize { size: bytes.len() });
     }
@@ -104,12 +104,12 @@ pub fn generate_passphrase(num_words: usize) -> Result<Vec<&'static str>, Error>
     let mut s_rng = rand::thread_rng();
     s_rng.try_fill(&mut bytes[..])?;
 
-    bytes_to_pass_phrase(&bytes)
+    bytes_to_passphrase(&bytes)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{bytes_to_pass_phrase, generate_passphrase, passphrase_to_bytes};
+    use crate::{bytes_to_passphrase, generate_passphrase, passphrase_to_bytes};
 
     // generate_passphrase
 
@@ -134,18 +134,18 @@ mod tests {
     #[test]
     fn odd_bytes_length() {
         assert_eq!(
-            bytes_to_pass_phrase(&[0]).unwrap_err().to_string(),
+            bytes_to_passphrase(&[0]).unwrap_err().to_string(),
             "odd size not supported: 1"
         );
     }
 
     #[test]
     fn expected_passphrases() {
-        assert_eq!(bytes_to_pass_phrase(&[]).unwrap().len(), 0);
-        assert_eq!(bytes_to_pass_phrase(&[0, 0]).unwrap(), &["a"]);
-        assert_eq!(bytes_to_pass_phrase(&[255, 255]).unwrap(), &["zyzzyva"]);
+        assert_eq!(bytes_to_passphrase(&[]).unwrap().len(), 0);
+        assert_eq!(bytes_to_passphrase(&[0, 0]).unwrap(), &["a"]);
+        assert_eq!(bytes_to_passphrase(&[255, 255]).unwrap(), &["zyzzyva"]);
         assert_eq!(
-            bytes_to_pass_phrase(&[
+            bytes_to_passphrase(&[
                 0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255
             ])
             .unwrap(),
