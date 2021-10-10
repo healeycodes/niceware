@@ -97,16 +97,16 @@ mod tests {
     #[test]
     #[should_panic(expected = "only even-sized byte arrays are supported")]
     fn odd_bytes_length() {
-        let _ = bytes_to_pass_phrase(&vec![0]);
+        let _ = bytes_to_pass_phrase(&[0]);
     }
 
     #[test]
     fn expected_passphrases() {
-        assert_eq!(bytes_to_pass_phrase(&vec![]).len(), 0);
-        assert_eq!(bytes_to_pass_phrase(&vec![0, 0]), vec!["a"]);
-        assert_eq!(bytes_to_pass_phrase(&vec![255, 255]), vec!["zyzzyva"]);
+        assert_eq!(bytes_to_pass_phrase(&[]).len(), 0);
+        assert_eq!(bytes_to_pass_phrase(&[0, 0]), &["a"]);
+        assert_eq!(bytes_to_pass_phrase(&[255, 255]), &["zyzzyva"]);
         assert_eq!(
-            bytes_to_pass_phrase(&vec![
+            bytes_to_pass_phrase(&[
                 0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255
             ]),
             "a bioengineering balloted gobbled creneled written depriving zyzzyva"
@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn invalid_word() {
         assert_eq!(
-            passphrase_to_bytes(&vec!["You", "love", "ninetales"])
+            passphrase_to_bytes(&["You", "love", "ninetales"])
                 .unwrap_err()
                 .details,
             "unknown word: ninetales"
@@ -129,19 +129,17 @@ mod tests {
 
     #[test]
     fn expected_bytes() {
-        assert_eq!(passphrase_to_bytes(&vec!["A"]).unwrap(), vec![0, 0]);
+        assert_eq!(passphrase_to_bytes(&["A"]).unwrap(), &[0, 0]);
         assert_eq!(
-            passphrase_to_bytes(&vec!["zyzzyva"]).unwrap(),
-            vec![255, 255]
+            passphrase_to_bytes(&["zyzzyva"]).unwrap(),
+            &[255, 255]
         );
         assert_eq!(
             passphrase_to_bytes(
-                &"a bioengineering balloted gobbled creneled written depriving zyzzyva"
-                    .split(" ")
-                    .collect::<Vec<&str>>()
+                &["a", "bioengineering", "balloted", "gobbled", "creneled", "written", "depriving", "zyzzyva"]
             )
             .unwrap(),
-            vec![0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255]
+            &[0, 0, 17, 212, 12, 140, 90, 246, 46, 83, 254, 60, 54, 169, 255, 255]
         );
     }
 }
