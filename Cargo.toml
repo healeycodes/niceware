@@ -1,9 +1,9 @@
 [package]
-name = "rust-niceware"
+name = "niceware"
 description = "Generate or convert random bytes into passphrases. A Rust port of niceware."
-homepage = "https://github.com/healeycodes/rust-niceware"
-repository = "https://github.com/healeycodes/rust-niceware"
-version = "0.3.0"
+homepage = "https://github.com/healeycodes/niceware"
+repository = "https://github.com/healeycodes/niceware"
+version = "0.4.0"
 edition = "2018"
 license = "MIT"
 

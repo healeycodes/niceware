@@ -7,7 +7,7 @@
 //!
 //! The transformation from bytes to passphrase is reversible.
 //!
-//! Because the wordlist is of exactly size 2^16, rust-niceware is also useful for convert cryptographic keys and other sequences of random bytes into human-readable phrases. With rust-niceware, a 128-bit key is equivalent to an 8-word phrase.
+//! Because the wordlist is of exactly size 2^16, niceware is also useful for convert cryptographic keys and other sequences of random bytes into human-readable phrases. With niceware, a 128-bit key is equivalent to an 8-word phrase.
 //!
 //! Similar to the source, heed this warning:
 //!
@@ -17,7 +17,7 @@
 //!
 //! ```
 //! // Creates 128-bit passphrase which is considered cryptographically secure.
-//! println!("Passphrase: {}", rust_niceware::generate_passphrase(8).unwrap().join(" "));
+//! println!("Passphrase: {}", niceware::generate_passphrase(8).unwrap().join(" "));
 //! ```
 
 pub use error::{UnknownWordError, RNGError};
