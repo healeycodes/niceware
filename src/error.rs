@@ -1,47 +1,50 @@
-use std::{error::Error, fmt};
+use std::{error, fmt};
 
-/// Error returned when a word is not found in dictionary.
 #[derive(Debug)]
-pub struct UnknownWordError {
-    word: Box<str>,
+pub enum Error {
+    /// Error returned when an array size is of odd length.
+    InvalidSize { size: usize },
+    /// Error returned when a word is not found in dictionary.
+    UnknownWord { word: String },
+    /// Error returned when a word count is greater than the maximum allowed.
+    TooManyWords { num_words: usize, max_words: usize },
+    /// Error returned when an RNG fails to generate entropy.
+    RNGError { inner: rand::Error },
 }
 
-impl UnknownWordError {
-    pub(crate) fn new(word: &str) -> UnknownWordError {
-        UnknownWordError {
-            word: word.into()
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::InvalidSize { size } => write!(f, "odd size not supported: {}", size),
+            Error::UnknownWord { word } => write!(f, "unknown word: {}", word),
+            Error::TooManyWords {
+                num_words,
+                max_words,
+            } => {
+                write!(
+                    f,
+                    "number of words {} cannot be greater than {}",
+                    num_words, max_words
+                )
+            }
+            Error::RNGError { inner } => {
+                write!(f, "failed to generate entropy for passphrase: {}", inner)
+            }
         }
     }
 }
 
-impl fmt::Display for UnknownWordError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "unknown word: {}", self.word)
-    }
-}
-
-impl Error for UnknownWordError {}
-
-/// Error returned when an RNG fails to generate entropy.
-#[derive(Debug)]
-pub struct RNGError {
-    error: rand::Error,
-}
-impl RNGError {
-    pub(crate) fn new(error: rand::Error) -> RNGError {
-        RNGError {
-            error,
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::RNGError { ref inner } => Some(inner),
+            _ => None,
         }
     }
 }
-impl fmt::Display for RNGError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("failed to generate entropy for passphrase")
-    }
-}
 
-impl Error for RNGError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.error)
+impl From<rand::Error> for Error {
+    fn from(e: rand::Error) -> Self {
+        Error::RNGError { inner: e }
     }
 }
