@@ -75,7 +75,7 @@ pub fn passphrase_to_bytes(words: &[&str]) -> Result<Vec<u8>, Error> {
             .map_err(|_| Error::UnknownWord {
                 word: word.to_string(),
             })?;
-        bytes.extend(u16::to_be_bytes(word_index.try_into().unwrap()));
+        bytes.extend(&u16::to_be_bytes(word_index.try_into().unwrap()));
     }
     Ok(bytes)
 }
