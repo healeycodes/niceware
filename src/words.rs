@@ -5055,7 +5055,7 @@ pub const ALL_WORDS: &[&str] = &[
     "blowier",
     "blowiest",
     "blowing",
-    "blowjob",
+    "blowlamp",
     "blown",
     "blowoff",
     "blowout",
